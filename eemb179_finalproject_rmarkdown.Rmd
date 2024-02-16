@@ -7,24 +7,88 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+#load any necessary packages
 ```
 
-## R Markdown
+# EEMB 179 Final Project
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+## The effect of fishing on hysteresis in Caribbean coral reefs (Blackwood et al. 2010)
+###https://link.springer.com/article/10.1007/s12080-010-0102-0
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## Parameters
+```{r}
+### Parameters from Table 1 ###
 
-```{r cars}
-summary(cars)
+# dimensionless parameter that determins strength of the linear relationship between coral cover and carrying capacity
+z <- 0.5 
+
+# growth rate of parrotfish (per year) estimated using the population doubling time provided in FishBase, assuming fishing pressure is absent
+s <- 0.49 
+
+# rate macroalgae directly overgrow coral per year
+alpha <- 0.1
+
+# rate macroalgae spread vegetatively over algal turfs per year
+lambda <- 0.8
+
+# rate of coral recruitment to algal turfs per year; coral always overgrow algal turfs
+### ASSUMPTION WE SHOULD MENTION -- that coral overgrows algal turfs
+r <- 1
+
+# coral mortality -- natural coral mortality accounts for 2-4% per year, predation for 30%, and remaining mortality from coral disease or tissue damage following bleaching
+d <- 0.44
+
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+```{r}
+###  Variables ###
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+#M <- 
+#C <- 
+#T <- 
+#P <- 
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+### Holding vectors ###
+
+```
+
+```{r}
+### Initial Conditions ###
+
+```
+
+
+```{r}
+### other things introduced that we'll need?
+#g_P <- P/beta ## not sure where they explain beta??
+```
+
+
+## Equations if habitat is the primary limiting resource for parrotfish (food availability as primary limiting resources is the other scenario they model)
+```{r}
+### Macroalgae ###
+dMdt <- (alpha*M*C) - ((g_P*M)/(M + T)) + (lambda*M*T)
+
+
+### Coral ###
+dCdt <- (r*T*C) - (d*C) - (alpha*M*C)
+
+
+### Turf algae ###
+dTdt <- (g_P*M)/(M + T) - (lambda*M*T) - (r*T*C) + (d*C)
+
+
+### Parrotfish ### using the equation with the squiggly P
+# K(C) = C in the squiggly P equation -- relationship between parrotfish carrying capacity and coral cover
+#dPdt <- s*P*(1 - (P/C))
+
+
+```
+
+
+
+
