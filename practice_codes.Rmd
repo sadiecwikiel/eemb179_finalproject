@@ -18,9 +18,10 @@ $$
 \newline
 \frac{d T}{dt} &= \frac{ gM}{(M + T)} - \gamma M T + dC\\
 \newline
+\frac{d P}{dt} &= s P(1 - \frac{P}{\beta K(C)}) - fP\\
+\newline
+\frac{d \tilde{P}}{dt} &= s \tilde{P}(1 - \frac{\tilde{P}}{K(C)}) - f\tilde{P}\\
 \end{align}
-\begin{align}
-\frac{d P}{dt} &= \s 
 $$
 
 Equations 
@@ -82,6 +83,7 @@ Variables
 Mcol <- 'limegreen' # plot color for macropalgae 
 Tcol <- 'darkolivegreen4' # plot color for turf algae 
 Ccol <- 'chocolate1' # plot color for coral 
+Pcol <- 'darkturquoise' #plot color for parrotfish population
 ```
 
 setting time and inital values 
@@ -94,6 +96,11 @@ M0 <- 0.5
 C0  <- .3
 T0  <- 1 - M0 - C0 
 P0 <- 1
+```
+
+for loop 
+```{r}
+### M, C, T dynamics in the absence of parrotfish grazing ###
 
 # creating holding vectors and filling initial conditions
 M.simu <- NaN*tset 
@@ -105,12 +112,7 @@ C.simu[1] <- C0
 P.simu <- NaN*tset
 P.simu[1] <- P0 #start P squiggle (only using P squiggle, so P squiggle = P; g = P squiggle because g(P) = P/beta, and we assume beta = 1 (max carrying capacity, which is the same as max coral cover), so setting initial g value to P0
 
-```
-
-for loop 
-```{r}
-### M, C, T dynamis in the absence of parrotfish grazing
-
+#for loop
 for(i in 2:length(tset)){
   # calculating change in time
 	dt <- tset[i]-tset[i-1] 
@@ -122,7 +124,7 @@ for(i in 2:length(tset)){
 		
 
 	# calculating change in population size -- replace g with P squiggle (P)
-	dM <- ( (alpha*M*C) - ((P*M)/(M + Tt)) + (gamma*M*Tt) ) * dt 
+	dM <- ( (alpha*M*C) - ((g*M)/(M + Tt)) + (gamma*M*Tt) ) * dt 
 	#dT <- ( (g*M)/(M + T) - (gamma*M*T) - (r*T*C) + (d*C)) * dt 
 	dC <- ((r*Tt*C) - (d*C) - (alpha*M*C) ) * dt
 	
@@ -135,6 +137,8 @@ for(i in 2:length(tset)){
 
 
 ```{r}
+# plot for M/C/T dynamics in the absence of parrotfish grazing
+
 # plot macroalgae
 plot(x = tset, y = M.simu,
      type = 'l', las = 1, lwd = 2, col = Mcol,
@@ -147,7 +151,7 @@ lines(x = tset, y = T.simu,
 lines(x = tset, y = C.simu,
       lwd = 2, col = Ccol)
 
-title("M, C, and T dynamics without parrotfish")
+title("M, C, and T Dynamics Without Parrotfish")
 
 legend(x = 60, y = 1,
        c('Macroalgae', 'Turf Algae', 'Coral'),
@@ -156,11 +160,15 @@ legend(x = 60, y = 1,
 ```
 
 ```{r}
-#### WITH PARROTFISH POPULATIONS ####
+####  Simulation WITH PARROTFISH -- habitat as primary limiting resource ####
+
+## Notes and Assumptions ##
 # parrotfish logistic growth changes the grazing rate (g = P, see model assumptions) and therefore impacts M, C, and T dynamics
-# f = 0 
-# beta = K(C) = C
-# simu2
+# assume that f = 0 (no fishing)
+# g(P) = alpha*P/beta where alpha is a positive constant. # alpha = g_max, assumed to be 1, so g(P) = P/beta, which guarantees that the grazing intensity. arrives at a maximum only if f = 0 and P(t) reaches maximum carrying capacity, requiring no limitation from habitat (i.e., K(C) = 1)
+# so we can assume for this simulation that beta = K(C) = C
+# P = P squiggle here, which is population size relative to maximum carrying capacity (beta)
+# g(P) = P squiggle = P, so in the equation for dM, we've replaced g with P
 
 # creating holding vectors and filling initial conditions
 M.simu2 <- NaN*tset 
@@ -172,6 +180,7 @@ C.simu2[1] <- C0
 P.simu2 <- NaN*tset
 P.simu2[1] <- P0
 
+#for loop for the simulation
 for(i in 2:length(tset)){
   # calculating change in time
 	dt <- tset[i]-tset[i-1] 
@@ -194,7 +203,7 @@ for(i in 2:length(tset)){
 	M.simu2[i] <- M.simu2[i-1] + dM
 	C.simu2[i] <- C.simu2[i-1] + dC
 	T.simu2[i] <- 1 - C.simu2[i] - M.simu2[i]
-	### add equation here to have g change as P changes -- with the assumptions of the model, we can set g = P squiggle (here just P)
+	# P here is population relative to maximum carrying capacity (beta), which also equals coral cover. So P = population relative to coral cover.
 	P.simu2[i] <- P.simu2[i-1] + dP
 }
 
@@ -213,7 +222,7 @@ lines(x = tset, y = T.simu2,
 lines(x = tset, y = C.simu2,
       lwd = 2, col = Ccol)
 
-title("M, C, and T dynamics with parrotfish grazing")
+title("M, C, and T Dynamics with Parrotfish Grazing \n (Habitat as Primary Limiting Resource)")
 
 legend(x = 60, y = 1,
        c('Macroalgae', 'Turf Algae', 'Coral'),
@@ -224,10 +233,10 @@ legend(x = 60, y = 1,
 ```{r}
 # plot macroalgae
 plot(x = tset, y = P.simu2,
-     type = 'l', las = 1, lwd = 2, col = Mcol,
-     xlab = 'Time', ylab = 'Parrotfish Population Size')
+     type = 'l', las = 1, lwd = 2, col = Pcol,
+     xlab = 'Time', ylab = 'Population Size Relative to Maximum Carrying Capacity')
 
-title("Parrotfish Population Growth")
+title("Parrotfish Population Growth \n (Habitat as Primary Limiting Resource)")
 
 ```
 
