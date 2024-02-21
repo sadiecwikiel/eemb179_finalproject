@@ -20,7 +20,7 @@ $$
 \newline
 \end{align}
 \begin{align}
-\frac{d P}{dt} &=
+\frac{d P}{dt} &= \s 
 $$
 
 Equations 
@@ -103,37 +103,33 @@ T.simu[1] <- T0
 C.simu <- NaN*tset
 C.simu[1] <- C0
 P.simu <- NaN*tset
-P.simu[1] <- P0 #start P squiggle (only using P squiggle, so P squiggle = P)
+P.simu[1] <- P0 #start P squiggle (only using P squiggle, so P squiggle = P; g = P squiggle because g(P) = P/beta, and we assume beta = 1 (max carrying capacity, which is the same as max coral cover), so setting initial g value to P0
+
 ```
 
 for loop 
 ```{r}
+### M, C, T dynamis in the absence of parrotfish grazing
+
 for(i in 2:length(tset)){
   # calculating change in time
 	dt <- tset[i]-tset[i-1] 
 	
-	# 
+	# set variable equal to the simulation value at the previous timestep
 	M <- M.simu[i-1]
 	C <- C.simu[i-1]
 	Tt <- T.simu[i-1]
-	P <- P.simu[i-1]
 		
-	# parrotfish population growth, assuming f = 0, and max carrying capacity = C
-	dP <- (s*P)*(1 - (P/C))
-	
-	### add equation here to have g change as P changes -- with the assumptions of the model, we can set g = P squiggle (here just P)
-	
-	# calculating change in population size 
-	dM <- ( (alpha*M*C) - ((g*M)/(M + Tt)) + (gamma*M*Tt) ) * dt 
+
+	# calculating change in population size -- replace g with P squiggle (P)
+	dM <- ( (alpha*M*C) - ((P*M)/(M + Tt)) + (gamma*M*Tt) ) * dt 
 	#dT <- ( (g*M)/(M + T) - (gamma*M*T) - (r*T*C) + (d*C)) * dt 
 	dC <- ((r*Tt*C) - (d*C) - (alpha*M*C) ) * dt
-
 	
 	# calculating total population size
 	M.simu[i] <- M.simu[i-1] + dM
 	C.simu[i] <- C.simu[i-1] + dC
 	T.simu[i] <- 1 - C.simu[i] - M.simu[i]
-	P.simu[i] <- P.simu[i-1] + dP
 }
 ```
 
@@ -151,11 +147,87 @@ lines(x = tset, y = T.simu,
 lines(x = tset, y = C.simu,
       lwd = 2, col = Ccol)
 
+title("M, C, and T dynamics without parrotfish")
+
 legend(x = 60, y = 1,
        c('Macroalgae', 'Turf Algae', 'Coral'),
        lwd = 2,
        col = c(Mcol, Tcol, Ccol))
 ```
 
+```{r}
+#### WITH PARROTFISH POPULATIONS ####
+# parrotfish logistic growth changes the grazing rate (g = P, see model assumptions) and therefore impacts M, C, and T dynamics
+# f = 0 
+# beta = K(C) = C
+# simu2
 
+# creating holding vectors and filling initial conditions
+M.simu2 <- NaN*tset 
+M.simu2[1] <- M0
+T.simu2 <- NaN*tset
+T.simu2[1] <- T0
+C.simu2 <- NaN*tset
+C.simu2[1] <- C0
+P.simu2 <- NaN*tset
+P.simu2[1] <- P0
+
+for(i in 2:length(tset)){
+  # calculating change in time
+	dt <- tset[i]-tset[i-1] 
+	
+	# set variable equal to the simulation value at the previous timestep
+	M <- M.simu2[i-1]
+	C <- C.simu2[i-1]
+	Tt <- T.simu2[i-1]
+	P <- P.simu2[i-1]
+		
+
+	# calculating change in population size -- replace g with P squiggle (P)
+	dM <- ( (alpha*M*C) - ((P*M)/(M + Tt)) + (gamma*M*Tt) ) * dt 
+	#dT <- ( (g*M)/(M + T) - (gamma*M*T) - (r*T*C) + (d*C)) * dt 
+	dC <- ((r*Tt*C) - (d*C) - (alpha*M*C) ) * dt
+	# parrotfish population growth, assuming f = 0, and max carrying capacity = C
+	dP <- ((s*P)*(1 - (P/C))) * dt
+	
+	# calculating total population size
+	M.simu2[i] <- M.simu2[i-1] + dM
+	C.simu2[i] <- C.simu2[i-1] + dC
+	T.simu2[i] <- 1 - C.simu2[i] - M.simu2[i]
+	### add equation here to have g change as P changes -- with the assumptions of the model, we can set g = P squiggle (here just P)
+	P.simu2[i] <- P.simu2[i-1] + dP
+}
+
+```
+
+```{r}
+# plot macroalgae
+plot(x = tset, y = M.simu2,
+     type = 'l', las = 1, lwd = 2, col = Mcol,
+     xlab = 'Time', ylab = 'Proportion of Coral, Turf and Macroalgae',
+     xlim = c(min(tset), max(tset)), ylim = c(0, 1))
+# plot turf
+lines(x = tset, y = T.simu2,
+      lwd = 2, col = Tcol)
+# plot coral
+lines(x = tset, y = C.simu2,
+      lwd = 2, col = Ccol)
+
+title("M, C, and T dynamics with parrotfish grazing")
+
+legend(x = 60, y = 1,
+       c('Macroalgae', 'Turf Algae', 'Coral'),
+       lwd = 2,
+       col = c(Mcol, Tcol, Ccol))
+```
+
+```{r}
+# plot macroalgae
+plot(x = tset, y = P.simu2,
+     type = 'l', las = 1, lwd = 2, col = Mcol,
+     xlab = 'Time', ylab = 'Parrotfish Population Size')
+
+title("Parrotfish Population Growth")
+
+```
 
