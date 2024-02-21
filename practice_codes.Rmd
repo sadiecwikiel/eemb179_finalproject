@@ -12,13 +12,15 @@ knitr::opts_chunk$set(echo = TRUE)
 set up equations 
 $$
 \begin{align}
-\frac{d M}{dt}  &= \alpha M C - \frac{ GM}{(M + T)} + \gamma M T\\ 
+\frac{d M}{dt}  &= \alpha M C - \frac{ gM}{(M + T)} + \gamma M T\\ 
 \newline
-\frac{d C}{dt} &= rTC - dC - $\alpha M C\\
+\frac{d C}{dt} &= rTC - dC - \alpha M C\\
 \newline
-\frac{d T}{dt} &= \frac{ GM}{(M + T)} - \gamma M T + dC\\
+\frac{d T}{dt} &= \frac{ gM}{(M + T)} - \gamma M T + dC\\
 \newline
 \end{align}
+\begin{align}
+\frac{d P}{dt} &=
 $$
 
 Equations 
@@ -37,6 +39,7 @@ Equations
 
 Parameters 
 ```{r}
+# parrotfish growth rate
 s <- 0.49 # intrinsic rate of growth s of parrotfish 
 
 # rate macroalgae directly overgrow coral per year
@@ -51,8 +54,11 @@ r <- 1 # corals recruit to and overgrow algal turfs at a rate r
 # coral mortality -- natural coral mortality accounts for 2-4% per year, predation for 30%, and remaining mortality from coral disease or tissue damage following bleaching
 d <- 0.44 # natural mortality rate of d
 
-# grazing rate g can change, right now im setting it between the cirtical values 0.18 and 0.39
+# grazing rate g can change, right now im setting it between the critical values 0.18 and 0.39
 g <- 0.4 # set grazing rate 
+
+# maximum parrotfish carrying capacity
+#beta <- C
 
 ```
  
@@ -87,6 +93,7 @@ tset <- seq(from = 0, to = 100, length.out = 20000) #set time from 0 to 100
 M0 <- 0.5
 C0  <- .3
 T0  <- 1 - M0 - C0 
+P0 <- 1
 
 # creating holding vectors and filling initial conditions
 M.simu <- NaN*tset 
@@ -95,6 +102,8 @@ T.simu <- NaN*tset
 T.simu[1] <- T0
 C.simu <- NaN*tset
 C.simu[1] <- C0
+P.simu <- NaN*tset
+P.simu[1] <- P0 #start P squiggle (only using P squiggle, so P squiggle = P)
 ```
 
 for loop 
@@ -107,16 +116,24 @@ for(i in 2:length(tset)){
 	M <- M.simu[i-1]
 	C <- C.simu[i-1]
 	Tt <- T.simu[i-1]
+	P <- P.simu[i-1]
 		
+	# parrotfish population growth, assuming f = 0, and max carrying capacity = C
+	dP <- (s*P)*(1 - (P/C))
+	
+	### add equation here to have g change as P changes -- with the assumptions of the model, we can set g = P squiggle (here just P)
+	
 	# calculating change in population size 
 	dM <- ( (alpha*M*C) - ((g*M)/(M + Tt)) + (gamma*M*Tt) ) * dt 
 	#dT <- ( (g*M)/(M + T) - (gamma*M*T) - (r*T*C) + (d*C)) * dt 
 	dC <- ((r*Tt*C) - (d*C) - (alpha*M*C) ) * dt
+
 	
 	# calculating total population size
 	M.simu[i] <- M.simu[i-1] + dM
 	C.simu[i] <- C.simu[i-1] + dC
 	T.simu[i] <- 1 - C.simu[i] - M.simu[i]
+	P.simu[i] <- P.simu[i-1] + dP
 }
 ```
 
