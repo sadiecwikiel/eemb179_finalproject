@@ -1,0 +1,144 @@
+---
+title: "Practice codes"
+author: "Maggie Doyle"
+date: "2024-02-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+set up equations 
+$$
+\begin{align}
+\frac{d M}{dt}  &= \alpha M C - \frac{ GM}{(M + T)} + \gamma M T\\ 
+\newline
+\frac{d C}{dt} &= rTC - dC - $\alpha M C\\
+\newline
+\frac{d T}{dt} &= \frac{ GM}{(M + T)} - \gamma M T + dC\\
+\newline
+\end{align}
+$$
+
+Equations 
+```{r}
+### Macroalgae ###
+# dMdt <- (alpha*M*C) - ((g*M)/(M + T)) + (gamma*M*T)
+
+
+### Coral ###
+# dCdt <- (r*T*C) - (d*C) - (alpha*M*C)
+
+
+### Turf algae ###
+# dTdt <- (g*M)/(M + T) - (gamma*M*T) - (r*T*C) + (d*C)
+```
+
+Parameters 
+```{r}
+s <- 0.49 # intrinsic rate of growth s of parrotfish 
+
+# rate macroalgae directly overgrow coral per year
+alpha <- 0.1 # coral overgrown by macroalgae at a rate a
+
+# rate macroalgae spread vegetatively over algal turfs per year
+gamma <- 0.8 # at a rate γ (gamma)
+
+# rate of coral recruitment to algal turfs per year; coral always overgrow algal turfs
+r <- 1 # corals recruit to and overgrow algal turfs at a rate r
+
+# coral mortality -- natural coral mortality accounts for 2-4% per year, predation for 30%, and remaining mortality from coral disease or tissue damage following bleaching
+d <- 0.44 # natural mortality rate of d
+
+# grazing rate g can change, right now im setting it between the cirtical values 0.18 and 0.39
+g <- 0.4 # set grazing rate 
+
+```
+ 
+Variables 
+```{r}
+###  Variables ###
+
+#M <- macroalgae 
+  # M <- 1 - C - T
+#C <- coral 
+  # C <- 1 - M - T
+#T <- turf algae 
+  # T <- 1 - M - C
+
+# M + C + T = 1 particular region of the seabed is covered entirely by macroalgae (M), coral (C), and algal turfs (T) (variables)
+
+# g # parrotfish graze macroalgae without distinction from algal turfs at a rate g
+
+
+# storing colors 
+Mcol <- 'limegreen' # plot color for macropalgae 
+Tcol <- 'darkolivegreen4' # plot color for turf algae 
+Ccol <- 'chocolate1' # plot color for coral 
+```
+
+setting time and inital values 
+```{r}
+# time set 0 to 100
+tset <- seq(from = 0, to = 100, length.out = 20000) #set time from 0 to 100 
+
+# set initial condition for the parameters, I just set these randomly to be equal to 1 as the paper says
+M0 <- 0.5
+C0  <- .3
+T0  <- 1 - M0 - C0 
+
+# creating holding vectors and filling initial conditions
+M.simu <- NaN*tset 
+M.simu[1] <- M0
+T.simu <- NaN*tset
+T.simu[1] <- T0
+C.simu <- NaN*tset
+C.simu[1] <- C0
+```
+
+for loop 
+```{r}
+for(i in 2:length(tset)){
+  # calculating change in time
+	dt <- tset[i]-tset[i-1] 
+	
+	# 
+	M <- M.simu[i-1]
+	C <- C.simu[i-1]
+	Tt <- T.simu[i-1]
+		
+	# calculating change in population size 
+	dM <- ( (alpha*M*C) - ((g*M)/(M + Tt)) + (gamma*M*Tt) ) * dt 
+	#dT <- ( (g*M)/(M + T) - (gamma*M*T) - (r*T*C) + (d*C)) * dt 
+	dC <- ((r*Tt*C) - (d*C) - (alpha*M*C) ) * dt
+	
+	# calculating total population size
+	M.simu[i] <- M.simu[i-1] + dM
+	C.simu[i] <- C.simu[i-1] + dC
+	T.simu[i] <- 1 - C.simu[i] - M.simu[i]
+}
+```
+
+
+```{r}
+# plot macroalgae
+plot(x = tset, y = M.simu,
+     type = 'l', las = 1, lwd = 2, col = Mcol,
+     xlab = 'Time', ylab = 'Proportion of Coral, Turf and Macroalgae',
+     xlim = c(min(tset), max(tset)), ylim = c(0, 1))
+# plot turf
+lines(x = tset, y = T.simu,
+      lwd = 2, col = Tcol)
+# plot coral
+lines(x = tset, y = C.simu,
+      lwd = 2, col = Ccol)
+
+legend(x = 60, y = 1,
+       c('Macroalgae', 'Turf Algae', 'Coral'),
+       lwd = 2,
+       col = c(Mcol, Tcol, Ccol))
+```
+
+
+
