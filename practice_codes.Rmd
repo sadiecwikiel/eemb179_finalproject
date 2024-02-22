@@ -61,6 +61,9 @@ g <- 0.4 # set grazing rate
 # maximum parrotfish carrying capacity
 #beta <- C
 
+# fishing pressure 
+f <- 0
+
 ```
  
 Variables 
@@ -197,7 +200,7 @@ for(i in 2:length(tset)){
 	#dT <- ( (g*M)/(M + T) - (gamma*M*T) - (r*T*C) + (d*C)) * dt 
 	dC <- ((r*Tt*C) - (d*C) - (alpha*M*C) ) * dt
 	# parrotfish population growth, assuming f = 0, and max carrying capacity = C
-	dP <- ((s*P)*(1 - (P/C))) * dt
+	dP <- ((s*P)*(1 - (P/C)) - f*P) * dt
 	
 	# calculating total population size
 	M.simu2[i] <- M.simu2[i-1] + dM
