@@ -251,7 +251,7 @@ title("Parrotfish Population Growth \n (Habitat as Primary Limiting Resource)")
 ### Bifurcation diagram of fishing effort parameter vs. coral cover equilibrium value
 
 # sequence of values for f (fishing pressure)
-fset <- seq(from = 0, to = 100,length.out = 50)
+fset <- seq(from = 0, to = 1,length.out = 50)
 
 # holding vectors for equilibrium values of C, M, and T
 Cstarset <- NaN*fset 
