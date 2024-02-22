@@ -7,88 +7,346 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
-#load any necessary packages
 ```
 
-# EEMB 179 Final Project
+set up equations 
+$$
+\begin{align}
+\frac{d M}{dt}  &= \alpha M C - \frac{ gM}{(M + T)} + \gamma M T\\ 
+\newline
+\frac{d C}{dt} &= rTC - dC - \alpha M C\\
+\newline
+\frac{d T}{dt} &= \frac{ gM}{(M + T)} - \gamma M T + dC\\
+\newline
+\frac{d P}{dt} &= s P(1 - \frac{P}{\beta K(C)}) - fP\\
+\newline
+\frac{d \tilde{P}}{dt} &= s \tilde{P}(1 - \frac{\tilde{P}}{K(C)}) - f\tilde{P}\\
+\end{align}
+$$
 
-## The effect of fishing on hysteresis in Caribbean coral reefs (Blackwood et al. 2010)
-###https://link.springer.com/article/10.1007/s12080-010-0102-0
-
-## Parameters
-```{r}
-### Parameters from Table 1 ###
-
-# dimensionless parameter that determins strength of the linear relationship between coral cover and carrying capacity
-z <- 0.5 
-
-# growth rate of parrotfish (per year) estimated using the population doubling time provided in FishBase, assuming fishing pressure is absent
-s <- 0.49 
-
-# rate macroalgae directly overgrow coral per year
-alpha <- 0.1
-
-# rate macroalgae spread vegetatively over algal turfs per year
-lambda <- 0.8
-
-# rate of coral recruitment to algal turfs per year; coral always overgrow algal turfs
-### ASSUMPTION WE SHOULD MENTION -- that coral overgrows algal turfs
-r <- 1
-
-# coral mortality -- natural coral mortality accounts for 2-4% per year, predation for 30%, and remaining mortality from coral disease or tissue damage following bleaching
-d <- 0.44
-
-```
-
-
-```{r}
-###  Variables ###
-
-#M <- 
-#C <- 
-#T <- 
-#P <- 
-```
-
-```{r}
-### Holding vectors ###
-
-```
-
-```{r}
-### Initial Conditions ###
-
-```
-
-
-```{r}
-### other things introduced that we'll need?
-#g_P <- P/beta ## not sure where they explain beta??
-```
-
-
-## Equations if habitat is the primary limiting resource for parrotfish (food availability as primary limiting resources is the other scenario they model)
+Equations 
 ```{r}
 ### Macroalgae ###
-dMdt <- (alpha*M*C) - ((g_P*M)/(M + T)) + (lambda*M*T)
+# dMdt <- (alpha*M*C) - ((g*M)/(M + T)) + (gamma*M*T)
 
 
 ### Coral ###
-dCdt <- (r*T*C) - (d*C) - (alpha*M*C)
+# dCdt <- (r*T*C) - (d*C) - (alpha*M*C)
 
 
 ### Turf algae ###
-dTdt <- (g_P*M)/(M + T) - (lambda*M*T) - (r*T*C) + (d*C)
+# dTdt <- (g*M)/(M + T) - (gamma*M*T) - (r*T*C) + (d*C)
+```
+
+Parameters 
+```{r}
+# parrotfish growth rate
+s <- 0.49 # intrinsic rate of growth s of parrotfish 
+
+# rate macroalgae directly overgrow coral per year
+alpha <- 0.1 # coral overgrown by macroalgae at a rate a
+
+# rate macroalgae spread vegetatively over algal turfs per year
+gamma <- 0.8 # at a rate γ (gamma)
+
+# rate of coral recruitment to algal turfs per year; coral always overgrow algal turfs
+r <- 1 # corals recruit to and overgrow algal turfs at a rate r
+
+# coral mortality -- natural coral mortality accounts for 2-4% per year, predation for 30%, and remaining mortality from coral disease or tissue damage following bleaching
+d <- 0.44 # natural mortality rate of d
+
+# grazing rate g can change, right now im setting it between the critical values 0.18 and 0.39
+g <- 0.4 # set grazing rate 
+
+# maximum parrotfish carrying capacity
+#beta <- C
+
+# fishing pressure 
+f <- 0
+
+```
+ 
+Variables 
+```{r}
+###  Variables ###
+
+#M <- macroalgae 
+  # M <- 1 - C - T
+#C <- coral 
+  # C <- 1 - M - T
+#T <- turf algae 
+  # T <- 1 - M - C
+
+# M + C + T = 1 particular region of the seabed is covered entirely by macroalgae (M), coral (C), and algal turfs (T) (variables)
+
+# g # parrotfish graze macroalgae without distinction from algal turfs at a rate g
 
 
-### Parrotfish ### using the equation with the squiggly P
-# K(C) = C in the squiggly P equation -- relationship between parrotfish carrying capacity and coral cover
-#dPdt <- s*P*(1 - (P/C))
+# storing colors 
+Mcol <- 'limegreen' # plot color for macropalgae 
+Tcol <- 'darkolivegreen4' # plot color for turf algae 
+Ccol <- 'chocolate1' # plot color for coral 
+Pcol <- 'darkturquoise' #plot color for parrotfish population
+```
 
+##  Simulation 2: WITH PARROTFISH -- habitat as primary limiting resource
 
+```{r}
+# setting time and inital values 
+# time set 0 to 100
+tset <- seq(from = 0, to = 100, length.out = 20000) #set time from 0 to 100 
+
+# set initial condition for the parameters, I just set these randomly to be equal to 1 as the paper says
+M0 <- 0.5
+C0  <- .3
+T0  <- 1 - M0 - C0 
+P0 <- 1
+```
+
+```{r}
+### Simulation 1: M, C, T dynamics in the absence of parrotfish grazing ###
+
+# creating holding vectors and filling initial conditions
+M.simu <- NaN*tset 
+M.simu[1] <- M0
+T.simu <- NaN*tset
+T.simu[1] <- T0
+C.simu <- NaN*tset
+C.simu[1] <- C0
+P.simu <- NaN*tset
+P.simu[1] <- P0 #start P squiggle (only using P squiggle, so P squiggle = P; g = P squiggle because g(P) = P/beta, and we assume beta = 1 (max carrying capacity, which is the same as max coral cover), so setting initial g value to P0
+
+#for loop
+for(i in 2:length(tset)){
+  # calculating change in time
+	dt <- tset[i]-tset[i-1] 
+	
+	# set variable equal to the simulation value at the previous timestep
+	M <- M.simu[i-1]
+	C <- C.simu[i-1]
+	Tt <- T.simu[i-1]
+		
+
+	# calculating change in population size -- replace g with P squiggle (P)
+	dM <- ( (alpha*M*C) - ((g*M)/(M + Tt)) + (gamma*M*Tt) ) * dt 
+	#dT <- ( (g*M)/(M + T) - (gamma*M*T) - (r*T*C) + (d*C)) * dt 
+	dC <- ((r*Tt*C) - (d*C) - (alpha*M*C) ) * dt
+	
+	# calculating total population size
+	M.simu[i] <- M.simu[i-1] + dM
+	C.simu[i] <- C.simu[i-1] + dC
+	T.simu[i] <- 1 - C.simu[i] - M.simu[i]
+}
 ```
 
 
+```{r}
+# plot for M/C/T dynamics in the absence of parrotfish grazing
 
+# plot macroalgae
+plot(x = tset, y = M.simu,
+     type = 'l', las = 1, lwd = 2, col = Mcol,
+     xlab = 'Time', ylab = 'Proportion of Coral, Turf and Macroalgae',
+     xlim = c(min(tset), max(tset)), ylim = c(0, 1))
+# plot turf
+lines(x = tset, y = T.simu,
+      lwd = 2, col = Tcol)
+# plot coral
+lines(x = tset, y = C.simu,
+      lwd = 2, col = Ccol)
+
+title("M, C, and T Dynamics Without Parrotfish")
+
+legend(x = 60, y = 1,
+       c('Macroalgae', 'Turf Algae', 'Coral'),
+       lwd = 2,
+       col = c(Mcol, Tcol, Ccol))
+```
+
+
+##  Simulation 2: WITH PARROTFISH -- habitat as primary limiting resource
+
+```{r}
+####  Simulation 2: WITH PARROTFISH -- habitat as primary limiting resource ####
+
+## Notes and Assumptions ##
+# parrotfish logistic growth changes the grazing rate (g = P, see model assumptions) and therefore impacts M, C, and T dynamics
+# assume that f = 0 (no fishing)
+# g(P) = alpha*P/beta where alpha is a positive constant. # alpha = g_max, assumed to be 1, so g(P) = P/beta, which guarantees that the grazing intensity. arrives at a maximum only if f = 0 and P(t) reaches maximum carrying capacity, requiring no limitation from habitat (i.e., K(C) = 1)
+# so we can assume for this simulation that beta = K(C) = C
+# P = P squiggle here, which is population size relative to maximum carrying capacity (beta)
+# g(P) = P squiggle = P, so in the equation for dM, we've replaced g with P
+
+# creating holding vectors and filling initial conditions
+M.simu2 <- NaN*tset 
+M.simu2[1] <- M0
+T.simu2 <- NaN*tset
+T.simu2[1] <- T0
+C.simu2 <- NaN*tset
+C.simu2[1] <- C0
+P.simu2 <- NaN*tset
+P.simu2[1] <- P0
+
+#for loop for the simulation
+for(i in 2:length(tset)){
+  # calculating change in time
+	dt <- tset[i]-tset[i-1] 
+	
+	# set variable equal to the simulation value at the previous timestep
+	M <- M.simu2[i-1]
+	C <- C.simu2[i-1]
+	Tt <- T.simu2[i-1]
+	P <- P.simu2[i-1]
+		
+
+	# calculating change in population size -- replace g with P squiggle (P)
+	dM <- ( (alpha*M*C) - ((P*M)/(M + Tt)) + (gamma*M*Tt) ) * dt 
+	#dT <- ( (g*M)/(M + T) - (gamma*M*T) - (r*T*C) + (d*C)) * dt 
+	dC <- ((r*Tt*C) - (d*C) - (alpha*M*C) ) * dt
+	# parrotfish population growth, assuming f = 0, and max carrying capacity = C
+	dP <- ((s*P)*(1 - (P/C)) - f*P) * dt
+	
+	# calculating total population size
+	M.simu2[i] <- M.simu2[i-1] + dM
+	C.simu2[i] <- C.simu2[i-1] + dC
+	T.simu2[i] <- 1 - C.simu2[i] - M.simu2[i]
+	# P here is population relative to maximum carrying capacity (beta), which also equals coral cover. So P = population relative to coral cover.
+	P.simu2[i] <- P.simu2[i-1] + dP
+}
+
+```
+
+```{r}
+# plot macroalgae
+plot(x = tset, y = M.simu2,
+     type = 'l', las = 1, lwd = 2, col = Mcol,
+     xlab = 'Time', ylab = 'Proportion of Coral, Turf and Macroalgae',
+     xlim = c(min(tset), max(tset)), ylim = c(0, 1))
+# plot turf
+lines(x = tset, y = T.simu2,
+      lwd = 2, col = Tcol)
+# plot coral
+lines(x = tset, y = C.simu2,
+      lwd = 2, col = Ccol)
+
+title("M, C, and T Dynamics with Parrotfish Grazing \n (Habitat as Primary Limiting Resource)")
+
+legend(x = 60, y = 1,
+       c('Macroalgae', 'Turf Algae', 'Coral'),
+       lwd = 2,
+       col = c(Mcol, Tcol, Ccol))
+```
+
+```{r}
+# plot macroalgae
+plot(x = tset, y = P.simu2,
+     type = 'l', las = 1, lwd = 2, col = Pcol,
+     xlab = 'Time', ylab = 'Population Size Relative to Maximum Carrying Capacity')
+
+title("Parrotfish Population Growth \n (Habitat as Primary Limiting Resource)")
+
+```
+
+```{r}
+### Bifurcation diagram of fishing effort parameter vs. coral cover equilibrium value
+
+# sequence of values for f (fishing pressure)
+fset <- seq(from = 0, to = 100,length.out = 50)
+
+# holding vectors for equilibrium values of C, M, and T
+Cstarset <- NaN*fset 
+Mstarset <- NaN*fset
+Tstarset <- NaN*fset
+Pstarset <- NaN*fset
+
+# for loop for fishing pressure bifurcation diagram
+for(j in 1:length(fset)){
+  # assign the value of Y
+	f <- fset[j] 
+	
+	# create a holding vector for predator and prey populations
+	# and fill with initial conditions
+	C.simu_f <- NaN*tset
+	C.simu_f[1] <- 1   
+	M.simu_f <- NaN*tset 
+	M.simu_f[1] <- 1
+	T.simu_f <- NaN*tset 
+	T.simu_f[1] <- 1
+	P.simu_f <- NaN*tset 
+	P.simu_f[1] <- 1
+	
+	for(i in 2:length(tset)){
+	  # calculating change in time
+		  # calculating change in time
+	  dt <- tset[i]-tset[i-1] 
+	
+	  # set variable equal to the simulation value at the previous timestep
+	  M <- M.simu_f[i-1]
+	  C <- C.simu_f[i-1]
+	  Tt <- T.simu_f[i-1]
+	  P <- P.simu_f[i-1]
+		
+  	# parrotfish population growth, assuming f = 0, and max carrying capacity = C
+  	dP <- ((s*P)*(1 - (P/C)) - f*P) * dt
+	  # calculating change in population size -- replace g with P squiggle (P)
+  	dM <- ( (alpha*M*C) - ((P*M)/(M + Tt)) + (gamma*M*Tt) ) * dt 
+  	#dT <- ( (g*M)/(M + T) - (gamma*M*T) - (r*T*C) + (d*C)) * dt 
+  	dC <- ((r*Tt*C) - (d*C) - (alpha*M*C) ) * dt
+
+	
+  	# calculating total population size
+  	M.simu_f[i] <- M.simu_f[i-1] + dM
+  	C.simu_f[i] <- C.simu_f[i-1] + dC
+  	T.simu_f[i] <- 1 - C.simu_f[i] - M.simu_f[i]
+	  # P here is population relative to maximum carrying capacity (beta), which also equals coral cover. So P = population relative to   coral cover.
+  	P.simu_f[i] <- P.simu_f[i-1] + dP
+  	} #end of the inner for loop
+	
+	# storing last population size (equilibrium population size) in holding vectors for equilibrium population sizes
+	Cstarset[j] <- C.simu_f[length(tset)]
+	Mstarset[j] <- M.simu_f[length(tset)]
+	Tstarset[j] <- T.simu_f[length(tset)]
+	Pstarset[j] <- P.simu_f[length(tset)]
+	
+} #end of outer for loop that iterates over each element in Yset
+
+```
+
+```{r}
+## Plot for fishing pressure vs. variables bifurcation diagrams
+
+# plot stable equilibria of  (Pstarset) against density of alternate prey (Yset)
+plot(x = fset, y = Cstarset,
+     type = 'l', lwd = 2, col = Ccol, las = 1,
+     xlab = 'Fishing pressure (f)', ylab = 'Stable equilibria of coral cover, C*')
+
+# plot stable equilibria of prey (Xstarset) against density of alternate prey (Yset)
+plot(x = fset, y = Mstarset,
+     type = 'l', lwd = 2, col = Mcol, las = 1, 
+     xlab = 'Fishing pressure (f)', ylab = 'Stable equilibria of macroalgae cover, M*')
+
+# plot stable equilibria of prey (Xstarset) against density of alternate prey (Yset)
+plot(x = fset, y = Tstarset,
+     type = 'l', lwd = 2, col = Tcol, las = 1, 
+     xlab = 'Fishing pressure (f)', ylab = 'Stable equilibria of turf algae cover, T*')
+
+# plot stable equilibria of prey (Xstarset) against density of alternate prey (Yset)
+plot(x = fset, y = Pstarset,
+     type = 'l', lwd = 2, col = Pcol, las = 1, 
+     xlab = 'Fishing pressure (f)', ylab = 'Stable equilibria of parrotfish population, P*')
+```
+
+
+```{r}
+####  Simulation 3: WITH PARROTFISH -- food availability as primary limiting resource ####
+
+# K(C) = 1 - zC where 0 <= z < 1
+
+## maybe we don't have to do this one, and can just focus on the first simulation??
+
+
+
+
+
+```
 

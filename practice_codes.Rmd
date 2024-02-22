@@ -89,8 +89,10 @@ Ccol <- 'chocolate1' # plot color for coral
 Pcol <- 'darkturquoise' #plot color for parrotfish population
 ```
 
-setting time and inital values 
+##  Simulation 2: WITH PARROTFISH -- habitat as primary limiting resource
+
 ```{r}
+# setting time and inital values 
 # time set 0 to 100
 tset <- seq(from = 0, to = 100, length.out = 20000) #set time from 0 to 100 
 
@@ -101,9 +103,8 @@ T0  <- 1 - M0 - C0
 P0 <- 1
 ```
 
-for loop 
 ```{r}
-### M, C, T dynamics in the absence of parrotfish grazing ###
+### Simulation 1: M, C, T dynamics in the absence of parrotfish grazing ###
 
 # creating holding vectors and filling initial conditions
 M.simu <- NaN*tset 
@@ -162,8 +163,11 @@ legend(x = 60, y = 1,
        col = c(Mcol, Tcol, Ccol))
 ```
 
+
+##  Simulation 2: WITH PARROTFISH -- habitat as primary limiting resource
+
 ```{r}
-####  Simulation WITH PARROTFISH -- habitat as primary limiting resource ####
+####  Simulation 2: WITH PARROTFISH -- habitat as primary limiting resource ####
 
 ## Notes and Assumptions ##
 # parrotfish logistic growth changes the grazing rate (g = P, see model assumptions) and therefore impacts M, C, and T dynamics
@@ -240,6 +244,110 @@ plot(x = tset, y = P.simu2,
      xlab = 'Time', ylab = 'Population Size Relative to Maximum Carrying Capacity')
 
 title("Parrotfish Population Growth \n (Habitat as Primary Limiting Resource)")
+
+```
+
+```{r}
+### Bifurcation diagram of fishing effort parameter vs. coral cover equilibrium value
+
+# sequence of values for f (fishing pressure)
+fset <- seq(from = 0, to = 100,length.out = 50)
+
+# holding vectors for equilibrium values of C, M, and T
+Cstarset <- NaN*fset 
+Mstarset <- NaN*fset
+Tstarset <- NaN*fset
+Pstarset <- NaN*fset
+
+# for loop for fishing pressure bifurcation diagram
+for(j in 1:length(fset)){
+  # assign the value of Y
+	f <- fset[j] 
+	
+	# create a holding vector for predator and prey populations
+	# and fill with initial conditions
+	C.simu_f <- NaN*tset
+	C.simu_f[1] <- 1   
+	M.simu_f <- NaN*tset 
+	M.simu_f[1] <- 1
+	T.simu_f <- NaN*tset 
+	T.simu_f[1] <- 1
+	P.simu_f <- NaN*tset 
+	P.simu_f[1] <- 1
+	
+	for(i in 2:length(tset)){
+	  # calculating change in time
+		  # calculating change in time
+	  dt <- tset[i]-tset[i-1] 
+	
+	  # set variable equal to the simulation value at the previous timestep
+	  M <- M.simu_f[i-1]
+	  C <- C.simu_f[i-1]
+	  Tt <- T.simu_f[i-1]
+	  P <- P.simu_f[i-1]
+		
+
+	  # calculating change in population size -- replace g with P squiggle (P)
+  	dM <- ( (alpha*M*C) - ((P*M)/(M + Tt)) + (gamma*M*Tt) ) * dt 
+  	#dT <- ( (g*M)/(M + T) - (gamma*M*T) - (r*T*C) + (d*C)) * dt 
+  	dC <- ((r*Tt*C) - (d*C) - (alpha*M*C) ) * dt
+  	# parrotfish population growth, assuming f = 0, and max carrying capacity = C
+  	dP <- ((s*P)*(1 - (P/C)) - f*P) * dt
+	
+  	# calculating total population size
+  	M.simu_f[i] <- M.simu_f[i-1] + dM
+  	C.simu_f[i] <- C.simu_f[i-1] + dC
+  	T.simu_f[i] <- 1 - C.simu_f[i] - M.simu_f[i]
+	  # P here is population relative to maximum carrying capacity (beta), which also equals coral cover. So P = population relative to   coral cover.
+  	P.simu_f[i] <- P.simu_f[i-1] + dP
+  	} #end of the inner for loop
+	
+	# storing last population size (equilibrium population size) in holding vectors for equilibrium population sizes
+	Cstarset[j] <- C.simu_f[length(tset)]
+	Mstarset[j] <- M.simu_f[length(tset)]
+	Tstarset[j] <- T.simu_f[length(tset)]
+	Pstarset[j] <- P.simu_f[length(tset)]
+	
+} #end of outer for loop that iterates over each element in Yset
+
+
+```
+
+```{r}
+## Plot for fishing pressure vs. variables bifurcation diagrams
+
+# plot stable equilibria of predator (Pstarset) against density of alternate prey (Yset)
+plot(x = fset, y = Cstarset,
+     type = 'l', lwd = 2, col = Ccol, las = 1,
+     xlab = 'Fishing pressure (f)', ylab = 'Stable equilibria of coral cover, C*')
+
+# plot stable equilibria of prey (Xstarset) against density of alternate prey (Yset)
+plot(x = fset, y = Mstarset,
+     type = 'l', lwd = 2, col = Mcol, las = 1, 
+     xlab = 'Fishing pressure (f)', ylab = 'Stable equilibria of macroalgae cover, M*')
+
+# plot stable equilibria of prey (Xstarset) against density of alternate prey (Yset)
+plot(x = fset, y = Tstarset,
+     type = 'l', lwd = 2, col = Tcol, las = 1, 
+     xlab = 'Fishing pressure (f)', ylab = 'Stable equilibria of turf algae cover, T*')
+
+# plot stable equilibria of prey (Xstarset) against density of alternate prey (Yset)
+plot(x = fset, y = Pstarset,
+     type = 'l', lwd = 2, col = Pcol, las = 1, 
+     xlab = 'Fishing pressure (f)', ylab = 'Stable equilibria of parrotfish population, P*')
+```
+
+
+```{r}
+####  Simulation 3: WITH PARROTFISH -- food availability as primary limiting resource ####
+
+# K(C) = 1 - zC where 0 <= z < 1
+
+## maybe we don't have to do this one, and can just focus on the first simulation??
+
+
+
+
 
 ```
 
