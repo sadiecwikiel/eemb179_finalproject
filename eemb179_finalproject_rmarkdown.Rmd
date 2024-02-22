@@ -89,7 +89,7 @@ Ccol <- 'chocolate1' # plot color for coral
 Pcol <- 'darkturquoise' #plot color for parrotfish population
 ```
 
-##  Simulation 2: WITH PARROTFISH -- habitat as primary limiting resource
+##  Simulation 1: Original Model (no parrotfish)
 
 ```{r}
 # setting time and inital values 
@@ -162,9 +162,19 @@ legend(x = 60, y = 1,
        lwd = 2,
        col = c(Mcol, Tcol, Ccol))
 ```
+This figure shows how macroalgae, turf algae, and coral cover change as a function of time in the absence of grazing by parrotfish. As macroalgae decreases, coral has more room to grow, so coral cover increases. 
 
 
 ##  Simulation 2: WITH PARROTFISH -- habitat as primary limiting resource
+
+Assumptions:
+- Parrotfish populations grow logistically and influence the grazing rate, therefore impacting M, C, and T dynamics.
+- Parrotfish rely on coral for habitat, and parrotfish population growth in simulation 2 is limited by coral cover.
+- First, we assume that fishing pressure (f) = 0.
+- The grazing rate of parrotfish is described as g(P) = (alpha*P)/beta. Alpha is a positive constant and is equal to the maximum grazing rate, so is assumed to be 1. Therefore, g(P) = P/beta, which guarantees that the grazing intensity arrives at a maximum only if f = 0 and P(t) reaches maximum carrying capacity (beta), requiring no limitation from habitat (i.d., K(C) = 1).
+- For this simulation, we assume that beta = K(C) = C. 
+- P squiggle is the equation of parrotfish population growth with respect to beta (max carrying capacity), and we use P to signify P squiggle in the simulation below. 
+- P (squiggle) has been substituted in for g in the macroalgae cover equation because g(P) = Psquiggle. 
 
 ```{r}
 ####  Simulation 2: WITH PARROTFISH -- habitat as primary limiting resource ####
@@ -236,6 +246,7 @@ legend(x = 60, y = 1,
        lwd = 2,
        col = c(Mcol, Tcol, Ccol))
 ```
+This figure shows how macroalgae, turf algae, and coral cover change with time if parrotfish grazing is present and fishing effort is 0. The final equilibrium state is the same as the scenario without parrotfish.
 
 ```{r}
 # plot macroalgae
@@ -246,6 +257,7 @@ plot(x = tset, y = P.simu2,
 title("Parrotfish Population Growth \n (Habitat as Primary Limiting Resource)")
 
 ```
+Parrotfish abundance relative to maximum carrying capacity (beta) over time. The population declines rapidly at the beginning of the simulation when coral cover is low because the proportion of coral cover is assumed to be the same as the carrying capacity in this habitat-limited scenario. As coral cover increases and levels off throughout the simulation, the parrotfish population does the same. 
 
 ```{r}
 ### Bifurcation diagram of fishing effort parameter vs. coral cover equilibrium value
