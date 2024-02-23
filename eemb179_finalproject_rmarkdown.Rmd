@@ -446,12 +446,70 @@ legend(x=0.385,y=0.68,
 ####  Simulation 3: WITH PARROTFISH -- food availability as primary limiting resource ####
 
 # K(C) = 1 - zC where 0 <= z < 1
+# in supplemental materials, they start with z = 0.5, but they also use z = 0.1, 0.3, 0.6, and 0.9. They find that hysteresis is possible for each value of z.
 
-## maybe we don't have to do this one, and can just focus on the first simulation??
+#set z value
+z <- 0.5
 
+# creating holding vectors and filling initial conditions
+M.simu3 <- NaN*tset 
+M.simu3[1] <- M0
+T.simu3 <- NaN*tset
+T.simu3[1] <- T0
+C.simu3 <- NaN*tset
+C.simu3[1] <- C0
+P.simu3 <- NaN*tset
+P.simu3[1] <- P0
 
+#for loop for the simulation
+for(i in 2:length(tset)){
+  # calculating change in time
+	dt <- tset[i]-tset[i-1] 
+	
+	# set variable equal to the simulation value at the previous timestep
+	M <- M.simu3[i-1]
+	C <- C.simu3[i-1]
+	Tt <- T.simu3[i-1]
+	P <- P.simu3[i-1]
+		
 
-
+	# calculating change in population size -- replace g with P squiggle (P)
+	dM <- ( (alpha*M*C) - ((P*M)/(M + Tt)) + (gamma*M*Tt) ) * dt 
+	#dT <- ( (g*M)/(M + T) - (gamma*M*T) - (r*T*C) + (d*C)) * dt 
+	dC <- ((r*Tt*C) - (d*C) - (alpha*M*C) ) * dt
+	# parrotfish population growth, assuming f = 0, and max carrying capacity K(C) = 1 - zC
+	dP <- ((s*P)*(1 - (P/(1-(z*C))) - f*P)) * dt
+	
+	# calculating total population size
+	M.simu3[i] <- M.simu3[i-1] + dM
+	C.simu3[i] <- C.simu3[i-1] + dC
+	T.simu3[i] <- 1 - C.simu3[i] - M.simu3[i]
+	# P here is population relative to maximum carrying capacity (beta), which also equals coral cover. So P = population relative to coral cover.
+	P.simu3[i] <- P.simu3[i-1] + dP
+}
 
 ```
 
+
+
+```{r}
+# plot macroalgae
+plot(x = tset, y = M.simu3,
+     type = 'l', las = 1, lwd = 2, col = Mcol,
+     xlab = 'Time', ylab = 'Proportion of Coral, Turf and Macroalgae',
+     xlim = c(min(tset), max(tset)), ylim = c(0, 1))
+# plot turf
+lines(x = tset, y = T.simu3,
+      lwd = 2, col = Tcol)
+# plot coral
+lines(x = tset, y = C.simu3,
+      lwd = 2, col = Ccol)
+
+title("M, C, and T Dynamics with Parrotfish Grazing \n (Food as Primary Limiting Resource)")
+
+legend(x = 60, y = 1,
+       c('Macroalgae', 'Turf Algae', 'Coral'),
+       lwd = 2,
+       col = c(Mcol, Tcol, Ccol))
+```
+This figure is for simulation 3 where food is the primary limiting resource for parrotfish population growth. 
