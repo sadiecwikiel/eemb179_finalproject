@@ -347,6 +347,99 @@ plot(x = fset, y = Pstarset,
      type = 'l', lwd = 2, col = Pcol, las = 1, 
      xlab = 'Fishing pressure (f)', ylab = 'Stable equilibria of parrotfish population, P*')
 ```
+Variables (parrot fish population, macro algae cover, turf algae cover and coral cover) with respect to fishing pressure. As fishing pressure crosses a 0.38 threshold the population of parrot fish decreases to an eq of 0. Macro algae (the parrot fishes food choice) takes over the ground coverage and reaches an eq of 1, and the turf algae and coral cover reach an eq of 0.
+
+Below is a closer look at the eq when fishing pressure hits 0.38.
+
+```{r}
+### Bifurcation diagram of fishing effort parameter vs. variables combined 
+
+# sequence of values for f (fishing pressure) focused on the 0.38 threshold
+fset <- seq(from = 0.35, to = 0.41,length.out = 50)
+
+# holding vectors for equilibrium values of C, M, and T
+Cstarset <- NaN*fset 
+Mstarset <- NaN*fset
+Tstarset <- NaN*fset
+Pstarset <- NaN*fset
+
+# for loop for fishing pressure bifurcation diagram
+for(j in 1:length(fset)){
+  # assign the value of Y
+    f <- fset[j] 
+    
+    # create a holding vector for predator and prey populations
+    # and fill with initial conditions
+    C.simu_f <- NaN*tset
+    C.simu_f[1] <- 1   
+    M.simu_f <- NaN*tset 
+    M.simu_f[1] <- 1
+    T.simu_f <- NaN*tset 
+    T.simu_f[1] <- 1
+    P.simu_f <- NaN*tset 
+    P.simu_f[1] <- 1
+    
+    for(i in 2:length(tset)){
+      # calculating change in time
+          # calculating change in time
+      dt <- tset[i]-tset[i-1] 
+    
+      # set variable equal to the simulation value at the previous timestep
+      M <- M.simu_f[i-1]
+      C <- C.simu_f[i-1]
+      Tt <- T.simu_f[i-1]
+      P <- P.simu_f[i-1]
+        
+    # parrotfish population growth, assuming f = 0, and max carrying capacity = C
+    dP <- ((s*P)*(1 - (P/C)) - f*P) * dt
+      # calculating change in population size -- replace g with P squiggle (P)
+    dM <- ( (alpha*M*C) - ((P*M)/(M + Tt)) + (gamma*M*Tt) ) * dt 
+    #dT <- ( (g*M)/(M + T) - (gamma*M*T) - (r*T*C) + (d*C)) * dt 
+    dC <- ((r*Tt*C) - (d*C) - (alpha*M*C) ) * dt
+
+    
+    # calculating total population size
+    M.simu_f[i] <- M.simu_f[i-1] + dM
+    C.simu_f[i] <- C.simu_f[i-1] + dC
+    T.simu_f[i] <- 1 - C.simu_f[i] - M.simu_f[i]
+      # P here is population relative to maximum carrying capacity (beta), which also equals coral cover. So P = population relative to   coral cover.
+    P.simu_f[i] <- P.simu_f[i-1] + dP
+    } #end of the inner for loop
+    
+    # storing last population size (equilibrium population size) in holding vectors for equilibrium population sizes
+    Cstarset[j] <- C.simu_f[length(tset)]
+    Mstarset[j] <- M.simu_f[length(tset)]
+    Tstarset[j] <- T.simu_f[length(tset)]
+    Pstarset[j] <- P.simu_f[length(tset)]
+    
+} #end of outer for loop that iterates over each element in Yset
+```
+
+
+```{r}
+# Bifurcation diagram with all variables
+# plot stable equilibria
+
+#macro aglae
+plot(x = fset, y = Mstarset,
+     type = 'l', lwd = 2, col = Mcol, las = 1,
+     xlab = 'Fishing pressure (f)', ylab = 'Equilibria')
+
+#coral
+lines(x = fset, y = Cstarset,
+     type = 'l', col = Ccol, lwd=2,)
+#turf algae
+lines(x = fset, y = Tstarset,
+      col = Tcol, lwd = 2,)
+#parrotfish
+lines(x = fset, y = Pstarset,
+     col = Pcol, lwd = 2, )
+
+legend(x=0.385,y=0.68,
+       legend=c("parrot fish population","macroalgae cover","turf algae cover","coral cover"),
+       lty=1, lwd=3,
+       col=c(Pcol,Mcol,Tcol,Ccol))
+```
 
 
 ```{r}
