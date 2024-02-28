@@ -12,13 +12,13 @@ knitr::opts_chunk$set(echo = TRUE)
 set up equations 
 $$
 \begin{align}
-\frac{d M}{dt}  &= \alpha M C - \frac{ gM}{(M + T)} + \gamma M T\\ 
+Macroalgae: \frac{d M}{dt}  &= \alpha M C - \frac{ gM}{(M + T)} + \gamma M T\\ 
 \newline
-\frac{d C}{dt} &= rTC - dC - \alpha M C\\
+Coral: \frac{d C}{dt} &= rTC - dC - \alpha M C\\
 \newline
-\frac{d T}{dt} &= \frac{ gM}{(M + T)} - \gamma M T + dC\\
+Turf Algae:  \frac{d T}{dt} &= \frac{ gM}{(M + T)} - \gamma M T + dC\\
 \newline
-\frac{d P}{dt} &= s P(1 - \frac{P}{\beta K(C)}) - fP\\
+Parrotfish: \frac{d P}{dt} &= s P(1 - \frac{P}{\beta K(C)}) - fP\\
 \newline
 \frac{d \tilde{P}}{dt} &= s \tilde{P}(1 - \frac{\tilde{P}}{K(C)}) - f\tilde{P}\\
 \end{align}
@@ -56,7 +56,12 @@ r <- 1 # corals recruit to and overgrow algal turfs at a rate r
 d <- 0.44 # natural mortality rate of d
 
 # grazing rate g can change, right now im setting it between the critical values 0.18 and 0.39
-g <- 0.4 # set grazing rate 
+   # set grazing rate when it is above 0.39 coral will be in high equilibrium 
+    g <- 0.4
+   # grazing rate when it is below 0.18 macroalgae will be in high equilibrium 
+    #g <- 0.19
+   # when grazing rate is between 0.18 and 0.39 and coral starts low, then bistability will bring back to low coral state, but when coral is high initially (above 0.5%), bistability will return to coral 
+    #g <- 0.25
 
 # maximum parrotfish carrying capacity
 #beta <- C
@@ -92,15 +97,17 @@ Pcol <- 'darkturquoise' #plot color for parrotfish population
 ##  Simulation 1: Original Model (no parrotfish)
 
 ```{r}
-# setting time and inital values 
+# setting time and initial values 
 # time set 0 to 100
 tset <- seq(from = 0, to = 100, length.out = 20000) #set time from 0 to 100 
 
-# set initial condition for the parameters, I just set these randomly to be equal to 1 as the paper says
-M0 <- 0.5
-C0  <- .3
-T0  <- 1 - M0 - C0 
-P0 <- 1
+# set initial condition for the parameters, I just set these randomly but also to be equal to 1 as the paper says 
+# M + C + T = 1 particular region of the seabed is covered entirely by macroalgae (M), coral (C), and algal turfs (T) (variables)
+M0 <- 0.6 # macro algae starts at 50% concentration
+C0  <- .3 # coral starts at 30%
+T0  <- 1 - M0 - C0  # turf starts at 20% 
+
+P0 <- 1 #parrotfish start at 1 individual 
 ```
 
 ```{r}
@@ -109,14 +116,17 @@ P0 <- 1
 # creating holding vectors and filling initial conditions
 M.simu <- NaN*tset 
 M.simu[1] <- M0
-T.simu <- NaN*tset
-T.simu[1] <- T0
 C.simu <- NaN*tset
 C.simu[1] <- C0
+T.simu <- NaN*tset
+T.simu[1] <- T0
+
 P.simu <- NaN*tset
 P.simu[1] <- P0 #start P squiggle (only using P squiggle, so P squiggle = P; g = P squiggle because g(P) = P/beta, and we assume beta = 1 (max carrying capacity, which is the same as max coral cover), so setting initial g value to P0
+```
 
-#for loop
+```{r}
+#for loop for M, C, T dynamics in absence of parrotfish grazing
 for(i in 2:length(tset)){
   # calculating change in time
 	dt <- tset[i]-tset[i-1] 
@@ -142,7 +152,7 @@ for(i in 2:length(tset)){
 
 ```{r}
 # plot for M/C/T dynamics in the absence of parrotfish grazing
-
+    # g = 0.4, C0 = 0.3
 # plot macroalgae
 plot(x = tset, y = M.simu,
      type = 'l', las = 1, lwd = 2, col = Mcol,
@@ -164,8 +174,143 @@ legend(x = 60, y = 1,
 ```
 This figure shows how macroalgae, turf algae, and coral cover change as a function of time in the absence of grazing by parrotfish. As macroalgae decreases, coral has more room to grow, so coral cover increases. 
 
+Bifurcation diagram of hysteresis
+- explaining how Coral cover (C) depends on grazing rate (g)
+```{r}
+alpha <- 0.1 # coral overgrown by macroalgae at a rate a
 
-##  Simulation 2: WITH PARROTFISH -- habitat as primary limiting resource
+# rate macroalgae spread vegetatively over algal turfs per year
+gamma <- 0.8 # at a rate γ (gamma)
+
+# rate of coral recruitment to algal turfs per year; coral always overgrow algal turfs
+r <- 1 # corals recruit to and overgrow algal turfs at a rate r
+
+# coral mortality -- natural coral mortality accounts for 2-4% per year, predation for 30%, and remaining mortality from coral disease or tissue damage following bleaching
+d <- 0.44 # natural mortality rate of d
+
+
+
+# setting a g set vector 
+g_set <- seq(from = 0, to = 0.55, length.out = 100)
+
+
+#set for C when it starts low: for region of bistability 
+Mset <- NaN*g_set # holding vector for the equilibrium resource population size for each value of Y in Yset
+Csetlow <- NaN*g_set # holding vector for N population size for each value of Y in Yset
+Tset <- NaN*g_set # holding vector for M population size for each value of Y in Yset
+
+
+#nested for loop  
+for(j in 1:length(g_set)){ # for each element j from 1 to the length of Kset
+	g <- g_set[j] # set g equal to the jth element of Kset
+	
+	# now simulate the model with this vector of Kset:
+	# create holding vectors 
+  M.simu <- NaN*tset; M.simu[1] <- 0.9
+  C.simu <- NaN*tset; C.simu[1] <- 0.05
+  T.simu <- NaN*tset; T.simu[1] <- 0.05
+
+for(i in 2:length(tset)){
+  # calculating change in time
+	dt <- tset[i]-tset[i-1] 
+	
+	# set variable equal to the simulation value at the previous timestep
+	M <- M.simu[i-1]
+	C <- C.simu[i-1]
+	Tt <- T.simu[i-1]
+		
+	# calculating change in population size -- replace g with P squiggle (P)
+	dM <- ( (alpha*M*C) - ((g*M)/(M + Tt)) + (gamma*M*Tt) ) * dt 
+	#dT <- ( (g*M)/(M + T) - (gamma*M*T) - (r*T*C) + (d*C)) * dt 
+	dC <- ((r*Tt*C) - (d*C) - (alpha*M*C) ) * dt
+	
+	# calculating total population size
+	M.simu[i] <- M.simu[i-1] + dM
+	C.simu[i] <- C.simu[i-1] + dC
+	T.simu[i] <- 1 - C.simu[i] - M.simu[i]
+}
+	
+	# storing population sizes at the last timepoint of our simulation (the equilibrium population sizes) in our holding vectors for equilibrium population sizes 
+  Mset[j] <- M.simu[length(tset)] 
+	Csetlow[j] <- C.simu[length(tset)] 
+	Tset[j] <- T.simu[length(tset)] 
+	
+}
+```
+
+```{r}
+#set for C when it starts HIGH: for region of bistability 
+Mset <- NaN*g_set # holding vector for the equilibrium resource population size for each value of Y in Yset
+Csethigh <- NaN*g_set # holding vector for N population size for each value of Y in Yset
+Tset <- NaN*g_set # holding vector for M population size for each value of Y in Yset
+
+
+#nested for loop  
+for(j in 1:length(g_set)){ # for each element j from 1 to the length of Kset
+	g <- g_set[j] # set g equal to the jth element of Kset
+	
+	# now simulate the model with this vector of Kset:
+	# create holding vectors 
+  M.simu <- NaN*tset; M.simu[1] <- 0.05
+  C.simu <- NaN*tset; C.simu[1] <- 0.9
+  T.simu <- NaN*tset; T.simu[1] <- 0.05
+
+for(i in 2:length(tset)){
+  # calculating change in time
+	dt <- tset[i]-tset[i-1] 
+	
+	# set variable equal to the simulation value at the previous timestep
+	M <- M.simu[i-1]
+	C <- C.simu[i-1]
+	Tt <- T.simu[i-1]
+		
+	# calculating change in population size -- replace g with P squiggle (P)
+	dM <- ( (alpha*M*C) - ((g*M)/(M + Tt)) + (gamma*M*Tt) ) * dt 
+	#dT <- ( (g*M)/(M + T) - (gamma*M*T) - (r*T*C) + (d*C)) * dt 
+	dC <- ((r*Tt*C) - (d*C) - (alpha*M*C) ) * dt
+	
+	# calculating total population size
+	M.simu[i] <- M.simu[i-1] + dM
+	C.simu[i] <- C.simu[i-1] + dC
+	T.simu[i] <- 1 - C.simu[i] - M.simu[i]
+}
+	
+	# storing population sizes at the last timepoint of our simulation (the equilibrium population sizes) in our holding vectors for equilibrium population sizes 
+  Mset[j] <- M.simu[length(tset)] 
+	Csethigh[j] <- C.simu[length(tset)] 
+	Tset[j] <- T.simu[length(tset)] 
+	
+}
+
+```
+
+
+plot coral cover vs. grazing rate  
+```{r}
+# plot grazing as function of Coral cover
+
+plot(x = g_set, y = Csetlow, #plot the grazing bifurcation when coral starts low
+     type = 'l', las = 1, lwd = 2, col = '#FFBE9F', 
+     xlab = 'Grazing intensity (g)', ylab = 'Coral Cover (C)',
+     main = 'Coral Cover vs. Grazing intensity')
+lines(x = g_set, y = Csethigh, col = '#DE4800', lwd = 2) #plot the grazing bifurcation when coral starts high
+
+#showing bistability  
+rect(xleft = 0.18, ybottom = -1, xright = 0.39, ytop = 0.7, col = rgb(0, 0, 0, alpha = 0.05), lty = 2, border = 1) #ligth grey box to show recovery
+text(x = 0.29, y = 0.29, 'Region of Bistability', cex = 0.9) # text to signify bistability
+text(x = 0.29, y = 0.54, 'start with high coral cover', cex = 0.6, col = '#DE4800') # text to signify low coral cover 
+text(x = 0.29, y = 0.02, 'start with low coral cover', cex = 0.6, col = '#FFBE9F') # text to signify high coral cover 
+
+text(x = 0.13, y = 0.54, 'Gcrit1 = 0.18', cex = 0.9) # text for g crit 1
+text(x = 0.44, y = 0.02, 'Gcrit2 = 0.39', cex = 0.9) # text for g crit 2
+
+```
+
+
+
+
+
+##  Simulation 2: WITH PARROTFISH -- **habitat** as primary limiting resource
 
 Assumptions:
 - Parrotfish populations grow logistically and influence the grazing rate, therefore impacting M, C, and T dynamics.
@@ -249,7 +394,7 @@ legend(x = 60, y = 1,
 This figure shows how macroalgae, turf algae, and coral cover change with time if parrotfish grazing is present and fishing effort is 0. The final equilibrium state is the same as the scenario without parrotfish.
 
 ```{r}
-# plot parrotfish growth
+# plot macroalgae
 plot(x = tset, y = P.simu2,
      type = 'l', las = 1, lwd = 2, col = Pcol,
      xlab = 'Time', ylab = 'Population Size Relative to Maximum Carrying Capacity')
@@ -491,7 +636,6 @@ for(i in 2:length(tset)){
 ```
 
 
-
 ```{r}
 # plot macroalgae
 plot(x = tset, y = M.simu3,
@@ -513,14 +657,3 @@ legend(x = 60, y = 1,
        col = c(Mcol, Tcol, Ccol))
 ```
 This figure is for simulation 3 where food is the primary limiting resource for parrotfish population growth. 
-
-
-```{r}
-#plot parrotfish population for simu3
-plot(x = tset, y = P.simu3,
-     type = 'l', las = 1, lwd = 2, col = Pcol,
-     xlab = 'Time', ylab = 'Population Size Relative to Maximum Carrying Capacity')
-
-title("Parrotfish Population Growth \n (Habitat as Primary Limiting Resource)")
-```
-
